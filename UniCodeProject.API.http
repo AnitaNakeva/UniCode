@@ -1,0 +1,6 @@
+@UniCodeProject.API_HostAddress = http://localhost:5010
+
+GET {{UniCodeProject.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
