@@ -1,8 +1,7 @@
 ﻿FROM mcr.microsoft.com/dotnet/sdk:8.0
 
 WORKDIR /app
-
-# Копирай само main.cs
+ 
 COPY main.cs .
 
 # Създай нов проект

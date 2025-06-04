@@ -26,18 +26,6 @@ namespace UniCodeProject.API.Controllers
             _dockerService = dockerService;
         }
 
-        [HttpPost("execute")]
-        public async Task<IActionResult> ExecuteCode([FromBody] CodeRequest request)
-        {
-            var output = await _dockerService.ExecuteCodeAsync(request.Code);
-            return Ok(new { result = output });
-        }
-
-        public class CodeRequest
-        {
-            public string Code { get; set; }
-        }
-
         // CREATE TASK (POST: api/tasks)
         [HttpPost]
         public async Task<IActionResult> CreateTask([FromBody] TaskModel taskModel)
