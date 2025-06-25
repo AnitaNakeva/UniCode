@@ -12,6 +12,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="DockerExecution\cpp\main.cpp" />
+    <None Remove="DockerExecution\java\Main.java" />
+    <None Remove="DockerExecution\js\main.js" />
+    <None Remove="DockerExecution\python\main.py" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.1" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.0" />
