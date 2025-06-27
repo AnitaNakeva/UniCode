@@ -1,4 +1,6 @@
-﻿namespace UniCodeProject.API.DataModels
+﻿using UniCodeProject.API.Enums;
+
+namespace UniCodeProject.API.DataModels
 {
     public class TaskSubmission
     {
@@ -17,5 +19,7 @@
         public string? Feedback { get; set; }
 
         public string? ExecutionResult { get; set; }
+
+        public SubmissionStatus Status { get; set; } = SubmissionStatus.Pending;
     }
 }

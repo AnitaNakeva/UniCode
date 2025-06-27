@@ -56,5 +56,11 @@ namespace UniCodeProject.API.Services
         {
             return await _context.TaskModels.Where(t => t.LecturerId == lecturerId).ToListAsync();
         }
+
+        public async Task<LecturerProfile?> GetByUserIdAsync(string userId)
+        {
+            return await _context.LecturerProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
+        }
+
     }
 }

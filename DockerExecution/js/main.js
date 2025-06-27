@@ -1,1 +1,1 @@
-console.log('✅ Hello from JavaScript in Docker!');
+console.log('Hello JS');

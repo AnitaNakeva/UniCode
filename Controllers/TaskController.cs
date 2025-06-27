@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using UniCodeProject.API.Contracts;
 using UniCodeProject.API.DataModels;
 using UniCodeProject.API.Services;
@@ -13,35 +14,40 @@ namespace UniCodeProject.API.Controllers
     public class TaskController : ControllerBase
     {
         private readonly ILecturerService _lecturerService;
+        private readonly ITaskService _taskService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly DockerExecutionService _dockerService;
 
         public TaskController(
             ILecturerService lecturerService,
-                UserManager<ApplicationUser> userManager,
-                    DockerExecutionService dockerService)
+            ITaskService taskService,                  
+            UserManager<ApplicationUser> userManager,
+            DockerExecutionService dockerService)
         {
             _lecturerService = lecturerService;
+            _taskService = taskService;
             _userManager = userManager;
             _dockerService = dockerService;
         }
 
-        // CREATE TASK (POST: api/tasks)
-        [HttpPost]
+        [HttpPost("create")]
         public async Task<IActionResult> CreateTask([FromBody] TaskModel taskModel)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
             var userId = _userManager.GetUserId(User);
-            if (taskModel.LecturerId != null && taskModel.LecturerId != userId)
-            {
-                return BadRequest(new { message = "You cannot assign a task to another lecturer." });
-            }
+            if (userId == null)
+                return Unauthorized(new { message = "Invalid token." });
 
-            taskModel.LecturerId = userId;
+            var lecturer = await _lecturerService.GetByUserIdAsync(userId);
+            if (lecturer == null)
+                return BadRequest(new { message = "Lecturer profile not found." });
+
+            taskModel.LecturerId = lecturer.Id.ToString();
+
+            var user = await _userManager.FindByIdAsync(userId);
+            taskModel.Lecturer = user;
 
             if (!taskModel.IsValid())
             {
@@ -58,84 +64,65 @@ namespace UniCodeProject.API.Controllers
                 return BadRequest(new { message = "Max score must be greater than zero." });
             }
 
-            var createdTask = await _lecturerService.CreateTaskAsync(taskModel);
+            var createdTask = await _taskService.CreateTaskAsync(taskModel);
 
             return CreatedAtAction(nameof(GetTaskById), new { id = createdTask.Id }, createdTask);
         }
 
-        // UPDATE TASK (PUT: api/tasks/{id})
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTask(int id, [FromBody] TaskModel taskModel)
         {
             if (id != taskModel.Id)
-            {
                 return BadRequest(new { message = "Task ID mismatch." });
-            }
 
             var userId = _userManager.GetUserId(User);
             if (taskModel.LecturerId != userId)
-            {
                 return Forbid();
-            }
 
-            var existingTask = await _lecturerService.GetTaskByIdAsync(id);
+            var existingTask = await _taskService.GetTaskByIdAsync(id);
             if (existingTask == null)
-            {
                 return NotFound(new { message = "Task not found." });
-            }
 
             if (!taskModel.IsValid())
-            {
                 return BadRequest(new { message = "Invalid task setup. Must have UnitTestCode or ExpectedOutput." });
-            }
 
             taskModel.LastUpdatedAt = DateTime.UtcNow;
-            var updatedTask = await _lecturerService.UpdateTaskAsync(taskModel);
+            var updatedTask = await _taskService.UpdateTaskAsync(taskModel);
 
             return Ok(updatedTask);
         }
 
-        // DELETE TASK (DELETE: api/tasks/{id})
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(int id)
         {
             var userId = _userManager.GetUserId(User);
-            var task = await _lecturerService.GetTaskByIdAsync(id);
+            var task = await _taskService.GetTaskByIdAsync(id);
 
             if (task == null)
-            {
                 return NotFound(new { message = "Task not found." });
-            }
 
             if (task.LecturerId != userId)
-            {
                 return Forbid();
-            }
 
-            await _lecturerService.DeleteTaskAsync(id);
+            await _taskService.DeleteTaskAsync(id);
             return NoContent();
         }
 
-        // GET TASK BY ID (GET: api/tasks/{id})
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTaskById(int id)
         {
-            var task = await _lecturerService.GetTaskByIdAsync(id);
-
+            var task = await _taskService.GetTaskByIdAsync(id);
             if (task == null)
-            {
                 return NotFound(new { message = "Task not found." });
-            }
 
             return Ok(task);
         }
 
-        // GET TASKS BY LECTURER (GET: api/tasks)
         [HttpGet]
         public async Task<IActionResult> GetTasks()
         {
             var userId = _userManager.GetUserId(User);
-            var tasks = await _lecturerService.GetTasksByLecturerAsync(userId);
+            var tasks = await _taskService.GetTasksByLecturerAsync(userId);
 
             return Ok(tasks);
         }

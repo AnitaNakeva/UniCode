@@ -4,11 +4,12 @@ namespace UniCodeProject.API.Contracts
 {
     public interface ILecturerService
     {
-        Task<int> CalculateNumberOfTasks(LecturerProfile lecturerProfile);
+        Task<LecturerProfile?> GetByUserIdAsync(string userId);
         Task<TaskModel> CreateTaskAsync(TaskModel task);
-        Task<TaskModel> UpdateTaskAsync(TaskModel task);
-        Task DeleteTaskAsync(int taskId);
-        Task<TaskModel> GetTaskByIdAsync(int taskId);
+        Task<TaskModel?> GetTaskByIdAsync(int taskId);
         Task<IEnumerable<TaskModel>> GetTasksByLecturerAsync(string lecturerId);
+        Task<TaskModel?> UpdateTaskAsync(TaskModel updatedTask);
+        Task DeleteTaskAsync(int taskId);
+        Task<int> CalculateNumberOfTasks(LecturerProfile lecturerProfile);
     }
 }

@@ -1,11 +1,7 @@
-﻿namespace UniCodeProject.API.DataModels
-{
-    public enum TaskType
-    {
-        UnitTests,
-        OutputBased
-    }
+﻿using UniCodeProject.API.Enums;
 
+namespace UniCodeProject.API.DataModels
+{
     public class TaskModel
     {
         public int Id { get; set; }
