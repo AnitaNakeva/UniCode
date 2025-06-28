@@ -13,8 +13,8 @@ namespace UniCodeProject.API.DataModels
         public string? ExpectedOutput { get; set; }
 
         public string? Password { get; set; }
-        public string LecturerId { get; set; } = null!;
-        public ApplicationUser Lecturer { get; set; } = null!;
+        public string? LecturerId { get; set; }
+        public ApplicationUser? Lecturer { get; set; }
 
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }

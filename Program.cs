@@ -140,6 +140,13 @@ namespace UniCodeProject.API
                 });
             });
 
+            builder.Services.AddControllers().AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNamingPolicy = null;
+                options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+            });
+
+
             var app = builder.Build();
 
             // 6️⃣ **Seed Roles on Startup**

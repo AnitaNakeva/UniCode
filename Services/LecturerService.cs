@@ -59,7 +59,14 @@ namespace UniCodeProject.API.Services
 
         public async Task<LecturerProfile?> GetByUserIdAsync(string userId)
         {
-            return await _context.LecturerProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
+            var all = await _context.LecturerProfiles.ToListAsync();
+            Console.WriteLine("Searching for UserId: " + userId);
+            foreach (var l in all)
+            {
+                Console.WriteLine($"Lecturer DB: {l.UserId}");
+            }
+
+            return all.FirstOrDefault(p => p.UserId == userId);
         }
 
     }

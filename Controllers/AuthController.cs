@@ -37,7 +37,9 @@ namespace UniCodeProject.API.Controllers
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
             {
-                var token = _jwtTokenService.GenerateToken(user);
+                var token = await _jwtTokenService.GenerateToken(user);
+                Console.WriteLine($"[DEBUG] Generated JWT token for userId: {user.Id} ({user.UserName})");
+
                 return Ok(new { token });
             }
 
