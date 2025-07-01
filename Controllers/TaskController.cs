@@ -30,7 +30,7 @@ namespace UniCodeProject.API.Controllers
         [HttpPost("create")]
         public async Task<IActionResult> CreateTask([FromBody] TaskModel taskModel)
         {
-            var userId = User.FindFirstValue("uid");
+            var userId = _userManager.GetUserId(User);
             Console.WriteLine($"[DEBUG] Got UID (from custom claim): {userId}");
 
             if (userId == null)

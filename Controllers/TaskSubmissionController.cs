@@ -38,6 +38,8 @@ namespace UniCodeProject.API.Controllers
         public async Task<IActionResult> SubmitSolution(int taskId, [FromBody] CodeRequest request)
         {
             var studentId = _userManager.GetUserId(User);
+            Console.WriteLine($"[DEBUG] Submitting as studentId: {studentId}");
+
             var task = await _taskService.GetTaskByIdAsync(taskId);
 
             if (task == null)
@@ -65,21 +67,39 @@ namespace UniCodeProject.API.Controllers
 
             var startTime = DateTime.UtcNow;
 
-            _ = Task.Run(async () =>
-            {
-                submission.Status = SubmissionStatus.Running;
-                await _context.SaveChangesAsync();
+            submission.Status = SubmissionStatus.Running;
+            await _context.SaveChangesAsync();
+            Console.WriteLine("[DEBUG] Set status to RUNNING and saved to DB");
 
-                var result = await _dockerExecutionService.ExecuteCodeAsync(submission.Solution, task.Language);
+            Console.WriteLine($"[DEBUG] Executing code for language: {task.Language}");
+            var result = await _dockerExecutionService.ExecuteCodeAsync(submission.Solution, task.Language);
 
-                submission.ExecutionResult = result;
-                submission.Status = SubmissionStatus.Completed;
-                submission.Score = result.Trim() == task.ExpectedOutput?.Trim() ? task.MaxScore : 0;
-                submission.Feedback = result.Trim() == task.ExpectedOutput?.Trim() ? "Correct" : "Incorrect";
-                submission.TimeTaken = DateTime.UtcNow - startTime;
+            Console.WriteLine($"[DEBUG] Docker returned: >{result}< expected: >{task.ExpectedOutput}<");
 
-                await _context.SaveChangesAsync();
-            });
+            var normalizedResult = result?.Trim()
+                .Replace("\r", "")
+                .Replace("\n", "")
+                .Replace("Output:", "")
+                .Replace("Error:", "")
+                .Trim();
+
+            var normalizedExpected = task.ExpectedOutput?.Trim()
+                .Replace("\r", "")
+                .Replace("\n", "");
+
+            Console.WriteLine($"[DEBUG] Normalized: >{normalizedResult}< vs expected: >{normalizedExpected}<");
+
+            submission.ExecutionResult = result;
+            submission.Status = SubmissionStatus.Completed;
+            submission.Score = normalizedResult == normalizedExpected ? task.MaxScore : 0;
+            submission.Feedback = normalizedResult == normalizedExpected ? "Correct" : "Incorrect";
+            submission.TimeTaken = DateTime.UtcNow - startTime;
+
+            await _context.SaveChangesAsync();
+
+            Console.WriteLine($"[DEBUG] Saved final submission: COMPLETED, score: {submission.Score}");
+
+
 
             return Ok(new
             {

@@ -33,10 +33,9 @@ namespace UniCodeProject.API
              .AddEntityFrameworkStores<ApplicationDbContext>()
              .AddDefaultTokenProviders();
 
-
             builder.Services.Configure<IdentityOptions>(options =>
             {
-                options.ClaimsIdentity.UserIdClaimType = ClaimTypes.NameIdentifier;
+                options.ClaimsIdentity.UserIdClaimType = "uid";
             });
 
             builder.Services.PostConfigure<CookieAuthenticationOptions>(IdentityConstants.ApplicationScheme, options =>
