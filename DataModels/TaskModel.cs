@@ -11,6 +11,8 @@ namespace UniCodeProject.API.DataModels
         public string Language { get; set; } = null!;
         public string? UnitTestCode { get; set; }
         public string? ExpectedOutput { get; set; }
+        
+        public string? InputData { get; set; }
 
         public string? Password { get; set; }
         public string? LecturerId { get; set; }

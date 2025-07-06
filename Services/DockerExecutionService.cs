@@ -4,7 +4,7 @@ namespace UniCodeProject.API.Services
 {
     public class DockerExecutionService
     {
-        public async Task<string> ExecuteCodeAsync(string code, string language)
+        public async Task<string> ExecuteCodeAsync(string code, string language, string inputData)
         {
             try
             {
@@ -48,6 +48,7 @@ namespace UniCodeProject.API.Services
                 filePath = Path.Combine(workingDir, fileName);
                 await File.WriteAllTextAsync(filePath, code);
 
+                // Build docker image
                 var buildInfo = new ProcessStartInfo
                 {
                     FileName = "docker",
@@ -67,10 +68,12 @@ namespace UniCodeProject.API.Services
                 if (buildProcess.ExitCode != 0)
                     return $"Build failed:\n{buildErr}";
 
+                // Run container, provide input
                 var runInfo = new ProcessStartInfo
                 {
                     FileName = "docker",
-                    Arguments = $"run --rm {imageName}",
+                    Arguments = $"run -i --rm {imageName}",
+                    RedirectStandardInput = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
@@ -78,17 +81,28 @@ namespace UniCodeProject.API.Services
                 };
 
                 using var runProcess = Process.Start(runInfo);
+
+                if (!string.IsNullOrWhiteSpace(inputData))
+                {
+                    await runProcess.StandardInput.WriteLineAsync(inputData);
+                    runProcess.StandardInput.Close();
+                }
+
                 string output = await runProcess.StandardOutput.ReadToEndAsync();
                 string error = await runProcess.StandardError.ReadToEndAsync();
                 await runProcess.WaitForExitAsync();
 
-                return $"Output: {output}\nError: {error}";
-                return string.IsNullOrWhiteSpace(error) ? output.Trim() : error.Trim();
+                Console.WriteLine($"[DOCKER DEBUG] STDOUT: {output}");
+                Console.WriteLine($"[DOCKER DEBUG] STDERR: {error}");
+
+                return string.IsNullOrWhiteSpace(error) ? output.Trim() : $"{output.Trim()}\nError: {error.Trim()}";
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return $"Exception: {ex.Message}";
             }
         }
+
+
     }
 }

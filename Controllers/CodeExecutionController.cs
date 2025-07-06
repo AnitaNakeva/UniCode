@@ -16,7 +16,7 @@ public class CodeExecutionController : ControllerBase
     [HttpPost("execute")]
     public async Task<IActionResult> ExecuteCode([FromBody] CodeRequest request)
     {
-        var output = await _dockerService.ExecuteCodeAsync(request.Code, request.Language);
+        var output = await _dockerService.ExecuteCodeAsync(request.Code, request.Language, request.InputData);
         return Ok(new { result = output });
     }
 }
