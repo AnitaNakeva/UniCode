@@ -92,8 +92,8 @@ namespace UniCodeProject.API.Services
                 string error = await runProcess.StandardError.ReadToEndAsync();
                 await runProcess.WaitForExitAsync();
 
-                Console.WriteLine($"[DOCKER DEBUG] STDOUT: {output}");
-                Console.WriteLine($"[DOCKER DEBUG] STDERR: {error}");
+                // Console.WriteLine($"[DOCKER DEBUG] STDOUT: {output}");
+                // Console.WriteLine($"[DOCKER DEBUG] STDERR: {error}");
 
                 return string.IsNullOrWhiteSpace(error) ? output.Trim() : $"{output.Trim()}\nError: {error.Trim()}";
             }

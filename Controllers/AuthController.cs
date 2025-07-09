@@ -43,8 +43,6 @@ namespace UniCodeProject.API.Controllers
                 return Ok(new { token });
             }
 
-
-
             return Unauthorized(new { message = "Invalid email or password." });
         }
 

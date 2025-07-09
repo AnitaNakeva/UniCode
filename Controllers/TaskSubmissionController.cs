@@ -38,7 +38,7 @@ namespace UniCodeProject.API.Controllers
         public async Task<IActionResult> SubmitSolution(int taskId, [FromBody] SubmissionRequest request)
         {
             var studentId = _userManager.GetUserId(User);
-            Console.WriteLine($"[DEBUG] Submitting as studentId: {studentId}");
+            // Console.WriteLine($"[DEBUG] Submitting as studentId: {studentId}");
 
             var task = await _taskService.GetTaskByIdAsync(taskId);
             if (task == null)
@@ -61,15 +61,15 @@ namespace UniCodeProject.API.Controllers
 
             submission.Status = SubmissionStatus.Running;
             await _context.SaveChangesAsync();
-            Console.WriteLine($"[DEBUG] Set status to RUNNING for submission {submission.Id}");
+            // Console.WriteLine($"[DEBUG] Set status to RUNNING for submission {submission.Id}");
 
-            Console.WriteLine($"[DEBUG] Executing code for language: {task.Language} with inputData: '{task.InputData}'");
+            // Console.WriteLine($"[DEBUG] Executing code for language: {task.Language} with inputData: '{task.InputData}'");
             var result = await _dockerExecutionService.ExecuteCodeAsync(
                 submission.Solution,
                 task.Language,
                 task.InputData ?? ""
             );
-            Console.WriteLine($"[DEBUG] Execution result: {result}");
+            // Console.WriteLine($"[DEBUG] Execution result: {result}");
 
             submission.ExecutionResult = result;
             submission.Status = SubmissionStatus.Completed;
@@ -77,7 +77,7 @@ namespace UniCodeProject.API.Controllers
             submission.Feedback = submission.Score > 0 ? "Correct" : "Incorrect";
             submission.TimeTaken = DateTime.UtcNow - startTime;
 
-            Console.WriteLine($"[DEBUG] Marked submission {submission.Id} as COMPLETED, score: {submission.Score}");
+            // Console.WriteLine($"[DEBUG] Marked submission {submission.Id} as COMPLETED, score: {submission.Score}");
             await _context.SaveChangesAsync();
 
             return Ok(new

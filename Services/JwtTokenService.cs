@@ -27,7 +27,7 @@ namespace UniCodeProject.API.Services
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.UserName ?? ""),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("uid", user.Id),  // ⬅️ CUSTOM UID claim
+                new Claim("uid", user.Id),  // CUSTOM UID claim
                 new Claim(ClaimTypes.Name, user.UserName ?? ""),
                 new Claim(ClaimTypes.Email, user.Email ?? "")
             };
@@ -38,7 +38,7 @@ namespace UniCodeProject.API.Services
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
 
-            Console.WriteLine($"[TOKEN DEBUG] Will embed UID: {user.Id}");
+            // Console.WriteLine($"[TOKEN DEBUG] Will embed UID: {user.Id}");
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],

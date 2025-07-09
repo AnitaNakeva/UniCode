@@ -20,12 +20,12 @@ namespace UniCodeProject.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // 1️⃣ **Configure Database Connection**
+            // Configure Database Connection
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
                     sqlOptions => sqlOptions.EnableRetryOnFailure()));
 
-            // 2️⃣ **Configure Identity**
+            // Configure Identity
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {
                 options.SignIn.RequireConfirmedAccount = true;
@@ -37,23 +37,8 @@ namespace UniCodeProject.API
             {
                 options.ClaimsIdentity.UserIdClaimType = "uid";
             });
-
-            builder.Services.PostConfigure<CookieAuthenticationOptions>(IdentityConstants.ApplicationScheme, options =>
-            {
-                options.Events.OnRedirectToLogin = context =>
-                {
-                    context.Response.StatusCode = 401;
-                    return Task.CompletedTask;
-                };
-                options.Events.OnRedirectToAccessDenied = context =>
-                {
-                    context.Response.StatusCode = 403;
-                    return Task.CompletedTask;
-                };
-            });
-
-
-            // 3️⃣ **Configure JWT Authentication**
+            
+            // Configure JWT Authentication
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -72,7 +57,7 @@ namespace UniCodeProject.API
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
                 };
 
-                // ✅ Обработка на 401 и 403 без redirect
+                // Обработка на 401 и 403 без redirect
                 options.Events = new JwtBearerEvents
                 {
                     OnChallenge = context =>
@@ -91,14 +76,14 @@ namespace UniCodeProject.API
                 };
             });
 
-            // 4️⃣ **Configure Authorization Policies**
+            // Configure Authorization Policies
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("RequireAdministratorRole", policy => policy.RequireRole("Administrator"));
                 options.AddPolicy("RequireLecturerRole", policy => policy.RequireRole("Lecturer"));
             });
 
-            // 5️⃣ **Register Services**
+            // Register Services
             builder.Services.AddScoped<JwtTokenService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IEmailService, EmailService>();
@@ -148,7 +133,7 @@ namespace UniCodeProject.API
 
             var app = builder.Build();
 
-            // 6️⃣ **Seed Roles on Startup**
+            // Seed Roles on Startup
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
@@ -156,7 +141,7 @@ namespace UniCodeProject.API
                 await RoleSeeder.SeedRolesAsync(roleManager);
             }
 
-            // 7️⃣ **Configure Middleware**
+            // Configure Middleware
             if (app.Environment.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

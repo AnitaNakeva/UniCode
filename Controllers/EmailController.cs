@@ -24,7 +24,6 @@ namespace UniCodeProject.API.Controllers
         [HttpGet("confirm-email")]
         public async Task<IActionResult> ConfirmEmail(string userId, string token)
         {
-            // Call ConfirmEmailAsync in the service
             var result = await _emailService.ConfirmEmailAsync(userId, token);
 
             if (!result)

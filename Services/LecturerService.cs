@@ -68,6 +68,35 @@ namespace UniCodeProject.API.Services
 
             return all.FirstOrDefault(p => p.UserId == userId);
         }
+        
+        public async Task<LecturerProfile?> GetMyProfileAsync(string userId)
+        {
+            return await _context.LecturerProfiles
+                .Include(lp => lp.Tasks)
+                .FirstOrDefaultAsync(lp => lp.UserId == userId);
+        }
+
+        public async Task<LecturerProfile?> UpdateMyProfileAsync(string userId, LecturerProfile updatedModel)
+        {
+            var lecturerProfile = await _context.LecturerProfiles.FirstOrDefaultAsync(lp => lp.UserId == userId);
+            if (lecturerProfile == null) return null;
+
+            lecturerProfile.FullName = updatedModel.FullName;
+            lecturerProfile.ProfilePictureUrl = updatedModel.ProfilePictureUrl;
+            lecturerProfile.Email = updatedModel.Email;
+
+            _context.Update(lecturerProfile);
+            await _context.SaveChangesAsync();
+            return lecturerProfile;
+        }
+
+        public async Task<IEnumerable<TaskModel>> GetMyTasksAsync(string userId)
+        {
+            return await _context.LecturerProfiles
+                .Where(lp => lp.UserId == userId)
+                .SelectMany(lp => lp.Tasks)
+                .ToListAsync();
+        }
 
     }
 }
