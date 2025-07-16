@@ -10,5 +10,6 @@ namespace UniCodeProject.API.Contracts
         Task<TaskModel?> UpdateTaskAsync(TaskModel updatedTask);
         Task DeleteTaskAsync(int id);
         Task<TaskModel> CreateTaskAsync(TaskModel task);
+        Task<TaskSubmission> EvaluateSubmissionAsync(TaskSubmission submission, TaskModel task);
     }
 }

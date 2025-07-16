@@ -4,17 +4,9 @@ class Program
 {
     static void Main()
     {
-        string line = Console.ReadLine();
-        if (line == null)
-        {
-            Console.WriteLine("No input provided.");
-            return;
-        }
-
-        string[] parts = line.Split();
+        string[] parts = Console.ReadLine().Split();
         int a = int.Parse(parts[0]);
         int b = int.Parse(parts[1]);
-
         Console.WriteLine(a + b);
     }
 }
