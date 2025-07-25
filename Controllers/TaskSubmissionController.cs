@@ -9,6 +9,7 @@ using UniCodeProject.API.DataModels;
 using UniCodeProject.API.DTOs;
 using UniCodeProject.API.Enums;
 using UniCodeProject.API.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace UniCodeProject.API.Controllers
 {
@@ -21,17 +22,20 @@ namespace UniCodeProject.API.Controllers
         private readonly DockerExecutionService _dockerExecutionService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ApplicationDbContext _context;
+        private readonly IServiceScopeFactory _scopeFactory;
 
         public TaskSubmissionController(
             ITaskService taskService,
             DockerExecutionService dockerExecutionService,
             UserManager<ApplicationUser> userManager,
-            ApplicationDbContext context)
+            ApplicationDbContext context,
+            IServiceScopeFactory scopeFactory)
         {
             _taskService = taskService;
             _dockerExecutionService = dockerExecutionService;
             _userManager = userManager;
             _context = context;
+            _scopeFactory = scopeFactory;
         }
 
         [HttpPost]
@@ -57,14 +61,49 @@ namespace UniCodeProject.API.Controllers
 
             await _taskService.SaveSubmissionAsync(submission);
 
-            var evaluatedSubmission = await _taskService.EvaluateSubmissionAsync(submission, task);
+            _ = Task.Run(async () =>
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var scopedContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var scopedTaskService = scope.ServiceProvider.GetRequiredService<ITaskService>();
 
+                var freshSubmission = await scopedContext.TaskSubmissions
+                    .Include(s => s.Task)
+                    .ThenInclude(t => t.TestCases)
+                    .FirstOrDefaultAsync(s => s.Id == submission.Id);
+
+                if (freshSubmission != null && freshSubmission.Task != null)
+                {
+                    await scopedTaskService.EvaluateSubmissionAsync(freshSubmission, freshSubmission.Task);
+                }
+            });
+            
             return Ok(new
             {
-                message = "Submission evaluated.",
-                passed = evaluatedSubmission.Feedback,
-                score = evaluatedSubmission.Score
+                message = "Submission received and is being evaluated.",
+                submissionId = submission.Id
             });
+        }
+        
+        [HttpGet("/api/submissions/{submissionId}")]
+        public async Task<IActionResult> GetSubmissionStatus(int submissionId)
+        {
+            var submission = await _context.TaskSubmissions
+                .Where(s => s.Id == submissionId)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Status,
+                    s.Score,
+                    s.Feedback,
+                    s.ExecutionResult
+                })
+                .FirstOrDefaultAsync();
+
+            if (submission == null)
+                return NotFound("Submission not found.");
+
+            return Ok(submission);
         }
     }
 }
