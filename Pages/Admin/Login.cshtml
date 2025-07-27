@@ -1,0 +1,24 @@
+﻿@page
+@model UniCodeProject.API.Pages.Admin.AdminLoginModel
+@{
+    Layout = null;
+}
+
+<h2>Admin Login</h2>
+
+<form method="post">
+    @Html.AntiForgeryToken()
+
+    <label>Email:</label>
+    <input asp-for="Username" name="Username" />
+    <br />
+    <label>Password:</label>
+    <input asp-for="Password" name="Password" type="password" />
+    <br />
+    <button type="submit">Login</button>
+</form>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <p style="color:red">@Model.ErrorMessage</p>
+}

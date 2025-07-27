@@ -11,6 +11,8 @@ using UniCodeProject.API.Data;
 using UniCodeProject.API.Data.Seeding;
 using UniCodeProject.API.DataModels;
 using UniCodeProject.API.Services;
+using EasyData.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace UniCodeProject.API
 {
@@ -30,51 +32,57 @@ namespace UniCodeProject.API
             {
                 options.SignIn.RequireConfirmedAccount = true;
             })
-             .AddEntityFrameworkStores<ApplicationDbContext>()
-             .AddDefaultTokenProviders();
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddDefaultTokenProviders();
 
             builder.Services.Configure<IdentityOptions>(options =>
             {
                 options.ClaimsIdentity.UserIdClaimType = "uid";
             });
-            
+
             // Configure JWT Authentication
             builder.Services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
-                    ValidAudience = builder.Configuration["Jwt:Issuer"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-                };
+                    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    options.DefaultAuthenticateScheme = "AdminScheme"; // използва се при проверка кой е текущият user
+                    options.DefaultChallengeScheme = "AdminScheme";    // използва се при редирект ако не е логнат
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                        ValidAudience = builder.Configuration["Jwt:Issuer"],
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+                    };
 
-                // Обработка на 401 и 403 без redirect
-                options.Events = new JwtBearerEvents
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnChallenge = context =>
+                        {
+                            context.HandleResponse();
+                            context.Response.StatusCode = 401;
+                            context.Response.ContentType = "application/json";
+                            return context.Response.WriteAsync("{\"error\": \"Unauthorized (401)\"}");
+                        },
+                        OnForbidden = context =>
+                        {
+                            context.Response.StatusCode = 403;
+                            context.Response.ContentType = "application/json";
+                            return context.Response.WriteAsync("{\"error\": \"Forbidden (403)\"}");
+                        }
+                    };
+                })
+                .AddCookie("AdminScheme", options =>
                 {
-                    OnChallenge = context =>
-                    {
-                        context.HandleResponse();
-                        context.Response.StatusCode = 401;
-                        context.Response.ContentType = "application/json";
-                        return context.Response.WriteAsync("{\"error\": \"Unauthorized (401)\"}");
-                    },
-                    OnForbidden = context =>
-                    {
-                        context.Response.StatusCode = 403;
-                        context.Response.ContentType = "application/json";
-                        return context.Response.WriteAsync("{\"error\": \"Forbidden (403)\"}");
-                    }
-                };
-            });
+                    options.LoginPath = "/admin/login";
+                    options.AccessDeniedPath = "/admin/forbidden";
+                });
+
 
             // Configure Authorization Policies
             builder.Services.AddAuthorization(options =>
@@ -91,10 +99,16 @@ namespace UniCodeProject.API
             builder.Services.AddScoped<IEmailSender, EmailSender>();
             builder.Services.AddScoped<DockerExecutionService>();
             builder.Services.AddScoped<ITaskService, TaskService>();
+
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
             builder.Services.AddControllers();
+            builder.Services.AddRazorPages();
 
             builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddHttpContextAccessor();
+
+            // Swagger config
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new() { Title = "UniCode API", Version = "v1" });
@@ -124,12 +138,12 @@ namespace UniCodeProject.API
                 });
             });
 
+            // JSON options
             builder.Services.AddControllers().AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.PropertyNamingPolicy = null;
                 options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
             });
-
 
             var app = builder.Build();
 
@@ -139,9 +153,12 @@ namespace UniCodeProject.API
                 var services = scope.ServiceProvider;
                 var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
                 await RoleSeeder.SeedRolesAsync(roleManager);
+                
+                var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+                await AdminSeeder.SeedAdminAsync(userManager, roleManager);
             }
 
-            // Configure Middleware
+            // Middleware pipeline
             if (app.Environment.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -154,10 +171,23 @@ namespace UniCodeProject.API
             }
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
+
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
 
+            app.MapEasyData(options =>
+                {
+                    options.UseDbContext<ApplicationDbContext>();
+                })
+                .RequireAuthorization(new AuthorizeAttribute
+                {
+                    AuthenticationSchemes = "AdminScheme",
+                    Roles = "Administrator"
+                });
+
+            app.MapRazorPages();
             app.MapControllers();
 
             app.Run();
