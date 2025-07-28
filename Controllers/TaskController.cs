@@ -70,7 +70,7 @@ namespace UniCodeProject.API.Controllers
         public async Task<IActionResult> GetTasks()
         {
             var userId = User.FindFirstValue("uid");
-            Console.WriteLine($"[DEBUG] Got UID for GetTasks: {userId}");
+            //Console.WriteLine($"[DEBUG] Got UID for GetTasks: {userId}");
 
             if (userId == null)
                 return Unauthorized(new { message = "Invalid token." });

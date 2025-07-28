@@ -9,6 +9,7 @@ using UniCodeProject.API.DataModels;
 using UniCodeProject.API.DTOs;
 using UniCodeProject.API.Enums;
 using UniCodeProject.API.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace UniCodeProject.API.Controllers
 {
@@ -21,30 +22,32 @@ namespace UniCodeProject.API.Controllers
         private readonly DockerExecutionService _dockerExecutionService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ApplicationDbContext _context;
+        private readonly IServiceScopeFactory _scopeFactory;
 
         public TaskSubmissionController(
             ITaskService taskService,
             DockerExecutionService dockerExecutionService,
             UserManager<ApplicationUser> userManager,
-            ApplicationDbContext context)
+            ApplicationDbContext context,
+            IServiceScopeFactory scopeFactory)
         {
             _taskService = taskService;
             _dockerExecutionService = dockerExecutionService;
             _userManager = userManager;
             _context = context;
+            _scopeFactory = scopeFactory;
         }
 
         [HttpPost]
         public async Task<IActionResult> SubmitSolution(int taskId, [FromBody] SubmissionRequest request)
         {
             var studentId = _userManager.GetUserId(User);
-            Console.WriteLine($"[DEBUG] Submitting as studentId: {studentId}");
 
             var task = await _taskService.GetTaskByIdAsync(taskId);
             if (task == null)
                 return NotFound("Task not found.");
 
-            if (task.TaskType != TaskType.OutputBased || string.IsNullOrWhiteSpace(task.ExpectedOutput))
+            if (task.TaskType != TaskType.OutputBased || task.TestCases == null || !task.TestCases.Any())
                 return BadRequest("Invalid or unsupported task configuration.");
 
             var submission = new TaskSubmission
@@ -57,35 +60,50 @@ namespace UniCodeProject.API.Controllers
             };
 
             await _taskService.SaveSubmissionAsync(submission);
-            var startTime = DateTime.UtcNow;
 
-            submission.Status = SubmissionStatus.Running;
-            await _context.SaveChangesAsync();
-            Console.WriteLine($"[DEBUG] Set status to RUNNING for submission {submission.Id}");
+            _ = Task.Run(async () =>
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var scopedContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var scopedTaskService = scope.ServiceProvider.GetRequiredService<ITaskService>();
 
-            Console.WriteLine($"[DEBUG] Executing code for language: {task.Language} with inputData: '{task.InputData}'");
-            var result = await _dockerExecutionService.ExecuteCodeAsync(
-                submission.Solution,
-                task.Language,
-                task.InputData ?? ""
-            );
-            Console.WriteLine($"[DEBUG] Execution result: {result}");
+                var freshSubmission = await scopedContext.TaskSubmissions
+                    .Include(s => s.Task)
+                    .ThenInclude(t => t.TestCases)
+                    .FirstOrDefaultAsync(s => s.Id == submission.Id);
 
-            submission.ExecutionResult = result;
-            submission.Status = SubmissionStatus.Completed;
-            submission.Score = result.Trim() == task.ExpectedOutput?.Trim() ? task.MaxScore : 0;
-            submission.Feedback = submission.Score > 0 ? "Correct" : "Incorrect";
-            submission.TimeTaken = DateTime.UtcNow - startTime;
-
-            Console.WriteLine($"[DEBUG] Marked submission {submission.Id} as COMPLETED, score: {submission.Score}");
-            await _context.SaveChangesAsync();
-
+                if (freshSubmission != null && freshSubmission.Task != null)
+                {
+                    await scopedTaskService.EvaluateSubmissionAsync(freshSubmission, freshSubmission.Task);
+                }
+            });
+            
             return Ok(new
             {
-                message = "Submission received and is being evaluated."
+                message = "Submission received and is being evaluated.",
+                submissionId = submission.Id
             });
         }
+        
+        [HttpGet("/api/submissions/{submissionId}")]
+        public async Task<IActionResult> GetSubmissionStatus(int submissionId)
+        {
+            var submission = await _context.TaskSubmissions
+                .Where(s => s.Id == submissionId)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Status,
+                    s.Score,
+                    s.Feedback,
+                    s.ExecutionResult
+                })
+                .FirstOrDefaultAsync();
 
+            if (submission == null)
+                return NotFound("Submission not found.");
 
+            return Ok(submission);
+        }
     }
 }

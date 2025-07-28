@@ -6,7 +6,7 @@ namespace UniCodeProject.API.Data.Seeding
     {
         public static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
         {
-            string[] roles = new string[] { "Admin", "Student", "Lecturer" };
+            string[] roles = new string[] { "Administrator", "Student", "Lecturer" };
 
             foreach (var role in roles)
             {

@@ -62,6 +62,12 @@ namespace UniCodeProject.API.Data
                 .WithMany()
                 .HasForeignKey(ts => ts.StudentId)
                 .OnDelete(DeleteBehavior.Restrict);
+            
+            modelBuilder.Entity<TaskTestCaseModel>()
+                .HasOne(tc => tc.Task)
+                .WithMany(t => t.TestCases)
+                .HasForeignKey(tc => tc.TaskModelId);
+
 
             modelBuilder.Entity<EmailConfirmationToken>().HasKey(e => e.Id);
 
@@ -76,6 +82,7 @@ namespace UniCodeProject.API.Data
         public DbSet<TaskStudent> TaskStudents { get; set; } = null!;
         public DbSet<TaskSubmission> TaskSubmissions { get; set; } = null!;
         public DbSet<EmailConfirmationToken> EmailConfirmationTokens { get; set; }
+        public DbSet<TaskTestCaseModel> TaskTestCases { get; set; }
 
     }
 

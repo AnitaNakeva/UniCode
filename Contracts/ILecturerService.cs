@@ -11,5 +11,9 @@ namespace UniCodeProject.API.Contracts
         Task<TaskModel?> UpdateTaskAsync(TaskModel updatedTask);
         Task DeleteTaskAsync(int taskId);
         Task<int> CalculateNumberOfTasks(LecturerProfile lecturerProfile);
+        Task<LecturerProfile?> GetMyProfileAsync(string userId);
+        Task<LecturerProfile?> UpdateMyProfileAsync(string userId, LecturerProfile updatedModel);
+        Task<IEnumerable<TaskModel>> GetMyTasksAsync(string userId);
+
     }
 }

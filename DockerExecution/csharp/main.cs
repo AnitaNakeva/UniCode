@@ -1,20 +1,12 @@
 using System;
 
-class Program
-{
-    static void Main()
-    {
-        string line = Console.ReadLine();
-        if (line == null)
-        {
-            Console.WriteLine("No input provided.");
-            return;
+class Program {
+    static void Main() {
+        int n = int.Parse(Console.ReadLine());
+        int sum = 0;
+        for (int i = 1; i <= n; i++) {
+            if (i % 2 == 1) sum += i;
         }
-
-        string[] parts = line.Split();
-        int a = int.Parse(parts[0]);
-        int b = int.Parse(parts[1]);
-
-        Console.WriteLine(a + b);
+        Console.WriteLine(sum);
     }
 }

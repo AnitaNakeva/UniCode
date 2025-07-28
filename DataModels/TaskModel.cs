@@ -10,8 +10,8 @@ namespace UniCodeProject.API.DataModels
         public TaskType TaskType { get; set; }
         public string Language { get; set; } = null!;
         public string? UnitTestCode { get; set; }
-        public string? ExpectedOutput { get; set; }
         
+        public ICollection<TaskTestCaseModel> TestCases { get; set; } = new List<TaskTestCaseModel>();
         public string? InputData { get; set; }
 
         public string? Password { get; set; }
@@ -31,10 +31,7 @@ namespace UniCodeProject.API.DataModels
         {
             if (TaskType == TaskType.UnitTests && string.IsNullOrWhiteSpace(UnitTestCode))
                 return false;
-
-            if (TaskType == TaskType.OutputBased && string.IsNullOrWhiteSpace(ExpectedOutput))
-                return false;
-
+            
             return true;
         }
     }

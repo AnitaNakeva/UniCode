@@ -4,6 +4,10 @@ namespace UniCodeProject.API.Contracts
 {
     public interface IStudentService
     {
-        public Task<int> CalculateLeaderboardPosition(StudentProfile studentProfile);
+        Task<StudentProfile?> GetMyProfileWithTasksAndAchievementsAsync(string userId);
+        Task<StudentProfile?> UpdateMyProfileAsync(string userId, StudentProfile updatedProfile);
+        Task<IEnumerable<Achievement>> GetAchievementsAsync(string userId);
+        Task<int> CalculateLeaderboardPosition(StudentProfile studentProfile);
+
     }
 }
