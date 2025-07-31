@@ -28,6 +28,12 @@ namespace UniCodeProject.API.Pages.Admin
 
         public async Task<IActionResult> OnPostAsync()
         {
+            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
+            {
+                ErrorMessage = "Email and password are required.";
+                return Page();
+            }
+            
             var user = await _userManager.FindByEmailAsync(Username);
             if (user == null)
             {
