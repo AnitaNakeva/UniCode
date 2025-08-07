@@ -53,7 +53,7 @@ namespace UniCodeProject.API.Data
 
             modelBuilder.Entity<TaskSubmission>()
                 .HasOne(ts => ts.Task)
-                .WithMany()
+                .WithMany(t => t.Submissions)
                 .HasForeignKey(ts => ts.TaskId)
                 .OnDelete(DeleteBehavior.Cascade);
 

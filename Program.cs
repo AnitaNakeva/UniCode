@@ -43,11 +43,11 @@ namespace UniCodeProject.API
             // Configure JWT Authentication
             builder.Services.AddAuthentication(options =>
                 {
-                    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                    options.DefaultAuthenticateScheme = "AdminScheme"; // използва се при проверка кой е текущият user
-                    options.DefaultChallengeScheme = "AdminScheme";    // използва се при редирект ако не е логнат
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
                 })
-                .AddJwtBearer(options =>
+                .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
                 {
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
@@ -57,7 +57,8 @@ namespace UniCodeProject.API
                         ValidateIssuerSigningKey = true,
                         ValidIssuer = builder.Configuration["Jwt:Issuer"],
                         ValidAudience = builder.Configuration["Jwt:Issuer"],
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
                     };
 
                     options.Events = new JwtBearerEvents
@@ -84,6 +85,7 @@ namespace UniCodeProject.API
                 });
 
 
+
             // Configure Authorization Policies
             builder.Services.AddAuthorization(options =>
             {
@@ -99,6 +101,7 @@ namespace UniCodeProject.API
             builder.Services.AddScoped<IEmailSender, EmailSender>();
             builder.Services.AddScoped<DockerExecutionService>();
             builder.Services.AddScoped<ITaskService, TaskService>();
+            builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 

@@ -25,13 +25,12 @@
                 <label class="form-label password">Password</label>
                 <input asp-for="Password" name="Password" class="form-control" type="password" />
             </div>
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <p style="color:red; margin-top: 3px; margin-left: 5px; font-size: 13.5px;">@Model.ErrorMessage</p>
+            }
             <button type="submit" class="btn-login">Login</button>
         </form>
-
-        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-        {
-            <p style="color:red; margin-top: 10px;">@Model.ErrorMessage</p>
-        }
     </div>
 </div>
 </body>
