@@ -16,15 +16,18 @@ namespace UniCodeProject.API.Controllers
         private readonly ILecturerService _lecturerService;
         private readonly ITaskService _taskService;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IExcelExportService _excelExportService;
 
         public TaskController(
             ILecturerService lecturerService,
             ITaskService taskService,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            IExcelExportService excelExportService)
         {
             _lecturerService = lecturerService;
             _taskService = taskService;
             _userManager = userManager;
+            _excelExportService = excelExportService;
         }
 
         [HttpPost("create")]
@@ -77,6 +80,20 @@ namespace UniCodeProject.API.Controllers
 
             var tasks = await _taskService.GetTasksByLecturerAsync(userId);
             return Ok(tasks);
+        }
+        
+        [Authorize(Roles = "Lecturer")]
+        [HttpGet("{taskId}/export")]
+        public async Task<IActionResult> ExportTaskResults(int taskId)
+        {
+            var lecturerId = _userManager.GetUserId(User);
+            var (excelData, taskName) = await _excelExportService.GenerateTaskResultsExcelAsync(taskId, lecturerId);
+
+            if (excelData == null || taskName == null)
+                return NotFound();
+
+            var fileName = $"TaskResults_{taskName}_{DateTime.UtcNow:yyyyMMdd_HHmm}.xlsx";
+            return File(excelData, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
     }
 }
