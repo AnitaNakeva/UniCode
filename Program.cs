@@ -101,6 +101,7 @@ namespace UniCodeProject.API
             builder.Services.AddScoped<IEmailSender, EmailSender>();
             builder.Services.AddScoped<DockerExecutionService>();
             builder.Services.AddScoped<ITaskService, TaskService>();
+            builder.Services.AddScoped<IStatisticsService, StatisticsService>();
             builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
